@@ -135,8 +135,8 @@ def mover_robot():
         pygame.display.flip()
         pygame.time.wait(500)
 
-    # Imprimir estadísticas de movimiento
-    print(f"Total de pasos: {pasos_totales}, Errores: {errores}")
+    # # Imprimir estadísticas de movimiento
+    # print(f"Total de pasos: {pasos_totales}, Errores: {errores}")
 
 
 def seleccionar_posicion_inicial_aleatoria(mapa):
@@ -215,8 +215,6 @@ aT = [P1, P2, P3, P4]
 aE.append(a1)
 aP.append(a0)
 
-instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Markov
-
 mostrar_menu = True
 ###################################################
 #ALGORITMOS
@@ -241,8 +239,7 @@ def ejecutar_algoritmo(seleccion):
                 aX = aQ[s][:]
                 aE[nK][s] = max(aX)
                 aP[nK][s] = aX.index(max(aX))
-            nK += 1
-            
+            nK += 1          
         instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Markov
         print("Instrucciones finales:", instrucciones)
         return instrucciones
