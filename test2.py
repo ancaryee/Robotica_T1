@@ -2,8 +2,10 @@ import pygame
 import sys
 import time
 import random
-
-# Definir colores
+#import colordaass
+#saaaa
+staticmethod
+# Definir coloress
 BLANCO, NEGRO, GRIS, ROJO, AZUL = (255, 255, 255), (0, 0, 0), (128, 128, 128), (255, 0, 0), (0, 0, 255)
 NORTE, SUR, ESTE, OESTE = 0, 1, 2, 3
 
