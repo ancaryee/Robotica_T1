@@ -173,7 +173,8 @@ Ld = 0.90
 nMETA = 27
 
 def resetear_estado():
-    global posicion_robot, instrucciones, ejemplo_mapa
+    global posicion_robot, instrucciones, ejemplo_mapa, meta_alcanzada, pasos_totales, errores
+    # Restablecer el mapa a su estado inicial
     ejemplo_mapa = [
         [' ', ' ', ' ', ' ', ' ', ' ', ' ', '_', '_'],
         [' ', '_', '_', ' ', '_', '_', ' ', '_', '_'],
@@ -183,8 +184,14 @@ def resetear_estado():
         [' ', '_', '_', ' ', '_', '_', ' ', '_', '_'],
         [' ', ' ', ' ', ' ', '_', '_', '_', '_', '_']
     ]
+    # Seleccionar una posición inicial aleatoria para el robot que no esté bloqueada
     posicion_robot = seleccionar_posicion_inicial_aleatoria(ejemplo_mapa)
-    instrucciones = []  # Limpia cualquier instrucción previa
+    # Reiniciar las instrucciones
+    instrucciones = []
+    # Restablecer las variables de estado
+    meta_alcanzada = False
+    pasos_totales = 0
+    errores = 0
 
 def nRw(nS, nA):
     if nS == nMETA:
@@ -213,7 +220,6 @@ instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Mark
 mostrar_menu = True
 ###################################################
 #ALGORITMOS
-instrucciones = []  # Inicializar la variable antes del bucle principal
 # Función para ejecutar un algoritmo basado en la selección
 def ejecutar_algoritmo(seleccion):
     global instrucciones
@@ -235,7 +241,6 @@ def ejecutar_algoritmo(seleccion):
                 aX = aQ[s][:]
                 aE[nK][s] = max(aX)
                 aP[nK][s] = aX.index(max(aX))
-            print(nK, aP[nK])    
             nK += 1
             
         instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Markov
@@ -268,7 +273,6 @@ def ejecutar_algoritmo(seleccion):
                 policy[s] = max(range(nA), key=lambda a: sum([aT[a][s][sp] * (nRw(sp, a) + Ld * V[sp]) for sp in range(nS)]))
 
             iteracion += 1  # Incrementar el contador de iteraciones
-            print(f"Iteración {iteracion}, Delta: {delta}")  # Opcional: imprimir el progreso
 
         print("Política óptima calculada usando Relative Value Iteration:", policy)
         aP.append(policy)
@@ -299,7 +303,6 @@ def ejecutar_algoritmo(seleccion):
                 policy[s] = max(range(nA), key=lambda a: sum([aT[a][s][sp] * (nRw(sp, a) + Ld * V[sp]) for sp in range(nS)]))
 
             iteracion += 1  # Incrementar el contador de iteraciones
-            print(f"Iteración {iteracion}, Delta: {delta}")  # Opcional: imprimir el progreso
 
         print("Política óptima calculada usando Gauss-Seidel Value Iteration:", policy)
         aP.append(policy)
@@ -329,7 +332,6 @@ def ejecutar_algoritmo(seleccion):
                 policy[s] = max(range(nA), key=lambda a: sum([aT[a][s][sp] * (nRw(sp, a) + Ld * V[sp]) for sp in range(nS)]))
 
             iteracion += 1  # Incrementar el contador de iteraciones
-            print(f"Iteración {iteracion}, Delta: {delta}")  # Opcional: imprimir el progreso
 
         print("Política óptima calculada usando Value Iteration con Descuento 0.98:", policy)
         aP.append(policy)
@@ -363,7 +365,6 @@ def ejecutar_algoritmo(seleccion):
                 policy[s] = max(range(nA), key=lambda a: sum([aT[a][s][sp] * (nRw(sp, a) + Ld * V[sp]) for sp in range(nS)]))
 
             iteracion += 1  # Incrementar el contador de iteraciones
-            print(f"Iteración {iteracion}, Delta: {delta}")  # Opcional: imprimir el progreso
 
         print("Relative Value Iteration con Descuento 0.98:", policy)
         aP.append(policy)
@@ -389,7 +390,6 @@ def ejecutar_algoritmo(seleccion):
                     delta = max(delta, abs(q_old - Q[s][a]))  # Actualizar delta
 
             iteracion += 1  # Incrementar el contador de iteraciones
-            print(f"Iteración {iteracion}, Delta: {delta}")  # Opcional: imprimir el progreso
 
         # Extraer la política óptima de la tabla Q
         policy = [max(range(nA), key=lambda a: Q[s][a]) for s in range(nS)]
@@ -417,7 +417,6 @@ def ejecutar_algoritmo(seleccion):
                     Q[s][a] = sum([aT[a][s][sp] * (nRw(sp, a) + Ld * max(Q[sp])) for sp in range(nS)])
                     delta = max(delta, abs(q_old - Q[s][a]))  # Actualizar delta
             iteracion += 1  # Incrementar el contador de iteraciones
-            print(f"Iteración {iteracion}, Delta: {delta}")  # Opcional: imprimir el progreso
 
         # Extraer la política óptima de la tabla Q
         policy = [max(range(nA), key=lambda a: Q[s][a]) for s in range(nS)]
@@ -429,7 +428,7 @@ def ejecutar_algoritmo(seleccion):
     
 
 # Configurar la pantalla
-pantalla = pygame.display.set_mode((ANCHO, ALTO))
+pantalla = pygame.display.set_mode((550, 600))
 pygame.display.set_caption('Seleccionar Algoritmo')
 
 # Fuente para el texto
@@ -468,6 +467,7 @@ def draw_home_button():
     text_rect = text.get_rect()
     text_rect.center = home_button.center
     pantalla.blit(text, text_rect)
+    
 # Asegúrate de que el tamaño del botón es suficiente para el texto
 button_width = max(font.size(alg)[0] for alg in algorithms) + 20  # Agrega un poco de margen
 buttons = [pygame.Rect(50, 30 + i*70, button_width, 50) for i, alg in enumerate(algorithms)]
@@ -491,30 +491,31 @@ while jugando:
         if evento.type == pygame.QUIT:
             jugando = False
         elif evento.type == pygame.MOUSEBUTTONDOWN:
+            mouse_pos = evento.pos
             if mostrar_menu:
-                mouse_pos = evento.pos
                 for i, button in enumerate(buttons):
                     if button.collidepoint(mouse_pos):
                         print(f"Ejecutando {algorithms[i]}")
-                        resetear_estado()  # Resetear el estado antes de ejecutar el nuevo algoritmo
-                        ejecutar_algoritmo(algorithms[i])
+                        resetear_estado()
+                        instrucciones = ejecutar_algoritmo(algorithms[i])
                         mostrar_menu = False
-                        mostrar_home = True  # Muestra el botón Home después de seleccionar un algoritmo
-            elif mostrar_home and home_button.collidepoint(evento.pos):  # Si se clickea el botón Home
-                resetear_estado()  # Resetear el estado al volver al menú
+                        mostrar_home = True
+            elif mostrar_home and home_button.collidepoint(mouse_pos):
                 mostrar_menu = True
-                mostrar_home = False  # Oculta el botón Home
+                mostrar_home = False
 
-    pantalla.fill(BLANCO)  # Limpia la pantalla
+    pantalla.fill(BLANCO)
     if mostrar_menu:
         draw_menu()
-    elif mostrar_home:
-        draw_home_button()
+    else:
+        if mostrar_home:
+            draw_home_button()
         dibujar_mapa(ejemplo_mapa, pantalla)
-        if instrucciones:
+        if instrucciones and not mostrar_menu:
             mover_robot()
             pygame.display.flip()
-            time.sleep(0.5)
+            time.sleep(0.3)
 
 pygame.quit()
 sys.exit()
+
