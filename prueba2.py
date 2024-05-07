@@ -2,10 +2,8 @@ import pygame
 import sys
 import time
 import random
-#import colordaass
-#saaaa
-staticmethod
-# Definir coloress
+
+# Definir colores
 BLANCO, NEGRO, GRIS, ROJO, AZUL = (255, 255, 255), (0, 0, 0), (128, 128, 128), (255, 0, 0), (0, 0, 255)
 NORTE, SUR, ESTE, OESTE = 0, 1, 2, 3
 
@@ -76,7 +74,9 @@ def dibujar_mapa(mapa, pantalla):
         texto = font.render("Recorrido terminado", True, NEGRO)
         pantalla.blit(texto, texto.get_rect(center=(ANCHO // 2, ALTO // 4)))
 
-
+def check_goal_reached(posicion_robot):
+    meta_pos = (5, 3)
+    return posicion_robot == meta_pos
 
 meta_alcanzada = False  # Esto marca si la meta ha sido alcanzada
 pasos_totales = 0  # Contador total de pasos realizados por el robot
@@ -84,62 +84,51 @@ errores = 0  # Contador de errores (movimientos no intencionales)
 
 NUMERO_MAXIMO_PASOS = 1000
 
-def mover_robot():
+def mover_robot(prob_principal, prob_secundaria):
     global posicion_robot, ejemplo_mapa, pantalla, meta_alcanzada, pasos_totales, errores
 
-    # Si la meta ha sido alcanzada o se han excedido los pasos máximos, no se mueve el robot
     if meta_alcanzada or pasos_totales >= NUMERO_MAXIMO_PASOS:
         return
 
     i, j = posicion_robot
-    desplazamientos_direccion = {
-        'norte': ((i-1, j), 0.20, [('este', (i, j+1), 0.40), ('oeste', (i, j-1), 0.40)]),
-        'sur':   ((i+1, j), 0.20, [('este', (i, j+1), 0.40), ('oeste', (i, j-1), 0.40)]),
-        'este':  ((i, j+1), 0.20, [('norte', (i-1, j), 0.40), ('sur', (i+1, j), 0.40)]),
-        'oeste': ((i, j-1), 0.20, [('norte', (i-1, j), 0.40), ('sur', (i+1, j), 0.40)])
+    direcciones = {
+        'norte': ((i-1, j), prob_principal, [('este', (i, j+1), prob_secundaria), ('oeste', (i, j-1), prob_secundaria)]),
+        'sur':   ((i+1, j), prob_principal, [('este', (i, j+1), prob_secundaria), ('oeste', (i, j-1), prob_secundaria)]),
+        'este':  ((i, j+1), prob_principal, [('norte', (i-1, j), prob_secundaria), ('sur', (i+1, j), prob_secundaria)]),
+        'oeste': ((i, j-1), prob_principal, [('norte', (i-1, j), prob_secundaria), ('sur', (i+1, j), prob_secundaria)])
     }
 
-    # Obtener la dirección desde la política
-    direccion_principal = ['norte', 'sur', 'este', 'oeste'][instrucciones[estados.index((i, j))]]
-    movimiento_principal, prob_principal, movimientos_secundarios = desplazamientos_direccion[direccion_principal]
+    direccion_principal = ['norte', 'sur', 'este', 'oeste'][random.randint(0, 3)]
+    movimiento_principal, _, movimientos_secundarios = direcciones[direccion_principal]
 
-    # Crear la lista de movimientos basada en probabilidades
-    movimientos = [movimiento_principal] * int(prob_principal * 100) + \
-                   [movimientos_secundarios[0][1]] * int(movimientos_secundarios[0][2] * 100) + \
-                   [movimientos_secundarios[1][1]] * int(movimientos_secundarios[1][2] * 100)
-
-    # Limitar el número de pasos a un máximo de NUMERO_MAXIMO_PASOS
-    movimientos = movimientos[:NUMERO_MAXIMO_PASOS]
-
-    # Elegir un movimiento basado en la probabilidad
-    nueva_posicion = random.choice(movimientos)
-    pasos_totales += 1
-
-    # Verificar si se realizó un movimiento erróneo
-    if nueva_posicion != movimiento_principal:
-        errores += 1
-
-    # Verificar si la nueva posición es válida
-    if (0 <= nueva_posicion[0] < len(ejemplo_mapa) and
-        0 <= nueva_posicion[1] < len(ejemplo_mapa[0]) and
-        ejemplo_mapa[nueva_posicion[0]][nueva_posicion[1]] not in "_M"):
+    # Crear lista de movimientos validados
+    movimientos_validos = []
+    if 0 <= movimiento_principal[0][0] < len(ejemplo_mapa) and 0 <= movimiento_principal[0][1] < len(ejemplo_mapa[0]) and ejemplo_mapa[movimiento_principal[0][0]][movimiento_principal[0][1]] != 'M':
+        movimientos_validos.extend([movimiento_principal[0]] * int(movimiento_principal[1] * 100))
+    
+    for direc, pos, prob in movimientos_secundarios:
+        if 0 <= pos[0] < len(ejemplo_mapa) and 0 <= pos[1] < len(ejemplo_mapa[0]) and ejemplo_mapa[pos[0]][pos[1]] != 'M':
+            movimientos_validos.extend([pos] * int(prob * 100))
+    
+    if movimientos_validos:
+        nueva_posicion = random.choice(movimientos_validos)
         posicion_robot = nueva_posicion
+        pasos_totales += 1
+    else:
+        errores += 1
+        print("Movimiento inválido intentado: Fuera de los límites del mapa o hacia un obstáculo.")
 
-        # Verificar si el robot llegó a la meta
-        if posicion_robot == (5, 3):  # Asegúrate de ajustar estas coordenadas a las de tu meta
-            ejemplo_mapa[5][3] = 'R'  # Marcar la meta como alcanzada
-            meta_alcanzada = True  # Detener movimientos futuros
-            print("¡Meta alcanzada!")
+    if check_goal_reached(posicion_robot):
+        ejemplo_mapa[5][3] = 'R'
+        meta_alcanzada = True
+        print("¡Meta alcanzada!")
 
-        # Redibujar el mapa con la nueva posición del robot
-        pantalla.fill(BLANCO)
-        dibujar_mapa(ejemplo_mapa, pantalla)
-        pygame.display.flip()
-        pygame.time.wait(500)
+    pantalla.fill(BLANCO)
+    dibujar_mapa(ejemplo_mapa, pantalla)
+    pygame.display.flip()
+    pygame.time.wait(500)
 
-    # Imprimir estadísticas de movimiento
     print(f"Total de pasos: {pasos_totales}, Errores: {errores}")
-
 
 def seleccionar_posicion_inicial_aleatoria(mapa):
     posiciones_validas = [
