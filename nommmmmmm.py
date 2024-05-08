@@ -127,7 +127,6 @@ def mover_robot(visualizar=True):
         if posicion_robot == (5, 3):  # Coordenadas de la meta
             ejemplo_mapa[5][3] = 'R'
             meta_alcanzada = True
-            graficar_nRw_acumulado()
 
         
         if visualizar:           
@@ -135,6 +134,9 @@ def mover_robot(visualizar=True):
             dibujar_mapa(ejemplo_mapa, pantalla)
             pygame.display.flip()
             pygame.time.wait(500)
+        
+        if meta_alcanzada and visualizar:
+            graficar_nRw_acumulado()
             
 
 def graficar_nRw_acumulado():
@@ -439,15 +441,16 @@ def ejecutar_algoritmo(seleccion):
         print("Instrucciones finales:", instrucciones)
         return instrucciones
 
-def ejecutar_simulaciones_algoritmo(algoritmo, num_simulaciones= 20):
+def ejecutar_simulaciones_algoritmo(algoritmo, num_simulaciones=20):
     resultados_pasos = []
     # Primera iteración con visualización
     resetear_estado()
     ejecutar_algoritmo(algoritmo)
     while not meta_alcanzada and pasos_totales < NUMERO_MAXIMO_PASOS:
-        mover_robot(visualizar=True)
+        mover_robot(visualizar=True)  # Asegúrate de que 'mover_robot' acepte y maneje el parámetro 'graficar'
 
     resultados_pasos.append(pasos_totales)
+    print("Pasos en la primera iteración visualizada:", pasos_totales)
 
     # Iteraciones adicionales sin visualización
     for _ in range(1, num_simulaciones):
@@ -458,7 +461,7 @@ def ejecutar_simulaciones_algoritmo(algoritmo, num_simulaciones= 20):
         resultados_pasos.append(pasos_totales)
 
     # Graficar los resultados de la simulación
-    plt.figure(figsize=(8, 4))
+    plt.figure(figsize=(10, 5))
     plt.bar(range(1, num_simulaciones + 1), resultados_pasos, color='blue')
     plt.xlabel('Iteración')
     plt.ylabel('Pasos necesarios para alcanzar la meta')
@@ -466,6 +469,9 @@ def ejecutar_simulaciones_algoritmo(algoritmo, num_simulaciones= 20):
     plt.xticks(range(1, num_simulaciones + 1))
     plt.grid(True)
     plt.show()
+
+    return resultados_pasos
+
 
     return resultados_pasos
 
