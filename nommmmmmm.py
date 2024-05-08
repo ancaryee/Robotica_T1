@@ -109,7 +109,9 @@ def mover_robot():
 
     nueva_posicion = random.choice(movimientos)
     pasos_totales += 1
-
+    # Verificar si se realizó un movimiento erróneo
+    if nueva_posicion != movimiento_principal:
+        errores += 1
     # Penalización por movimiento no óptimo
     penalizacion = -10 if nueva_posicion != movimiento_principal else 10
     nRw_values.append(penalizacion)  # Acumula valores de nRw con subidas y bajadas
