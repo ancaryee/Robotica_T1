@@ -2,8 +2,6 @@ import pygame
 import sys
 import time
 import random
-import matplotlib.pyplot as plt
-import numpy as np
 
 # Definir coloress
 BLANCO, NEGRO, GRIS, ROJO, AZUL, VERDE = (255, 255, 255), (0, 0, 0), (128, 128, 128), (255, 0, 0), (0, 0, 255), (0, 255, 0)
@@ -83,13 +81,12 @@ pasos_totales = 0  # Contador total de pasos realizados por el robot
 errores = 0  # Contador de errores (movimientos no intencionales)
 
 NUMERO_MAXIMO_PASOS = 1000
-nRw_values = []
 
 def mover_robot():
-    global posicion_robot, ejemplo_mapa, pantalla, meta_alcanzada, pasos_totales, errores, nRw_values,prob_principal, prob_secundaria
+    global posicion_robot, ejemplo_mapa, pantalla, meta_alcanzada, pasos_totales, errores,prob_principal, prob_secundaria
 
-    if pasos_totales >= NUMERO_MAXIMO_PASOS or meta_alcanzada:
-        
+    # Si la meta ha sido alcanzada o se han excedido los pasos máximos, no se mueve el robot
+    if meta_alcanzada or pasos_totales >= NUMERO_MAXIMO_PASOS:
         return
 
     i, j = posicion_robot
@@ -100,62 +97,47 @@ def mover_robot():
         'oeste': ((i, j-1), prob_principal, [('norte', (i-1, j), prob_secundaria), ('sur', (i+1, j), prob_secundaria)])
     }
 
+    # Obtener la dirección desde la política
     direccion_principal = ['norte', 'sur', 'este', 'oeste'][instrucciones[estados.index((i, j))]]
     movimiento_principal, prob_principal, movimientos_secundarios = desplazamientos_direccion[direccion_principal]
 
+    # Crear la lista de movimientos basada en probabilidades
     movimientos = [movimiento_principal] * int(prob_principal * 100) + \
                    [movimientos_secundarios[0][1]] * int(movimientos_secundarios[0][2] * 100) + \
                    [movimientos_secundarios[1][1]] * int(movimientos_secundarios[1][2] * 100)
 
+    # Limitar el número de pasos a un máximo de NUMERO_MAXIMO_PASOS
+    movimientos = movimientos[:NUMERO_MAXIMO_PASOS]
+
+    # Elegir un movimiento basado en la probabilidad
     nueva_posicion = random.choice(movimientos)
     pasos_totales += 1
+
     # Verificar si se realizó un movimiento erróneo
     if nueva_posicion != movimiento_principal:
         errores += 1
-    # Penalización por movimiento no óptimo
-    penalizacion = -10 if nueva_posicion != movimiento_principal else 10
-    nRw_values.append(penalizacion)  # Acumula valores de nRw con subidas y bajadas
 
-    if (0 <= nueva_posicion[0] < len(ejemplo_mapa) and 0 <= nueva_posicion[1] < len(ejemplo_mapa[0]) and
+    # Verificar si la nueva posición es válida
+    if (0 <= nueva_posicion[0] < len(ejemplo_mapa) and
+        0 <= nueva_posicion[1] < len(ejemplo_mapa[0]) and
         ejemplo_mapa[nueva_posicion[0]][nueva_posicion[1]] not in "_M"):
         posicion_robot = nueva_posicion
-        recompensa_actual = nRw(estados.index(posicion_robot), 0)
-        nRw_values[-1] += recompensa_actual  # Ajusta el último valor acumulado con la recompensa actual
 
-        if posicion_robot == (5, 3):  # Coordenadas de la meta
-            ejemplo_mapa[5][3] = 'R'
-            meta_alcanzada = True
-            graficar_nRw_acumulado()
+        # Verificar si el robot llegó a la meta
+        if posicion_robot == (5, 3):  # Asegúrate de ajustar estas coordenadas a las de tu meta
+            ejemplo_mapa[5][3] = 'R'  # Marcar la meta como alcanzada
+            meta_alcanzada = True  # Detener movimientos futuros
             print("¡Meta alcanzada!")
 
+        # Redibujar el mapa con la nueva posición del robot
         pantalla.fill(BLANCO)
         dibujar_mapa(ejemplo_mapa, pantalla)
         pygame.display.flip()
         pygame.time.wait(500)
 
-    print(f"Total de pasos: {pasos_totales}, Errores: {errores}")
+    # Imprimir estadísticas de movimiento
+    # print(f"Total de pasos: {pasos_totales}, Errores: {errores}")
 
-def graficar_nRw_final():
-    plt.figure(figsize=(10, 5))
-    plt.plot(nRw_values, label='nRw durante el recorrido')
-    plt.xlabel('Pasos')
-    plt.ylabel('Valor de nRw')
-    plt.title('Valores de nRw al Alcanzar la Meta o al Finalizar el Recorrido')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-def graficar_nRw_acumulado():
-    """Función para graficar el nRw acumulado."""
-    plt.figure(figsize=(10, 5))
-    plt.plot(range(len(nRw_values)), nRw_values, label='nRw por paso')
-    plt.plot(range(len(nRw_values)), np.cumsum(nRw_values), label='nRw acumulado', color='red')
-    plt.xlabel('Pasos')
-    plt.ylabel('Valor de nRw')
-    plt.title('Valor Acumulado de nRw')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
 
 def seleccionar_posicion_inicial_aleatoria(mapa):
     posiciones_validas = [
@@ -242,6 +224,8 @@ mostrar_menu = True
 def ejecutar_algoritmo(seleccion):
     global instrucciones
     global aP
+    iteraciones_resultados = []  # Lista para almacenar los resultados de cada iteración completa
+
     if seleccion == "Value Iteration Clásico":
         Ld = 0.9
         nK = 1
@@ -443,7 +427,29 @@ def ejecutar_algoritmo(seleccion):
         instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Markov
         print("Instrucciones finales:", instrucciones)
         return instrucciones
-    
+def ejecutar_simulaciones_algoritmo(algoritmo, num_simulaciones=10):
+    resultados_pasos = []  # Almacena los pasos de cada simulación
+
+    for _ in range(num_simulaciones):
+        resetear_estado()  # Restablece el mapa y las variables para cada simulación
+        instrucciones = ejecutar_algoritmo(algoritmo)  # Configura el algoritmo elegido
+        while not meta_alcanzada and pasos_totales < NUMERO_MAXIMO_PASOS:
+            mover_robot()  # Mueve el robot según las instrucciones del algoritmo
+        resultados_pasos.append(pasos_totales)  # Guarda los pasos de esta simulación
+
+    return resultados_pasos  
+def mostrar_resultados(resultados):
+    pantalla.fill(BLANCO)  # Limpia la pantalla
+    y_pos = 50
+    for i, resultado in enumerate(resultados):
+        text = font.render(f"Simulación {i + 1}: {resultado} pasos", True, NEGRO)
+        pantalla.blit(text, (50, y_pos))
+        y_pos += 40  # Incrementa la posición y para el próximo texto
+    pygame.display.flip()  # Actualiza la pantalla
+
+# Llamar a mostrar_resultados en el bucle principal si se ha completado una simulación
+    if not mostrar_menu and mostrar_home:
+     mostrar_resultados(resultados)  
 # Solicitar probabilidades al usuario
 prob_principal = float(input("Introduce la probabilidad para la dirección principal (e.g., 0.90): "))
 prob_secundaria = (1 - prob_principal) / 2
@@ -496,8 +502,6 @@ buttons = [pygame.Rect(50, 30 + i*70, button_width, 50) for i, alg in enumerate(
 # Definición del botón Home
 home_button = pygame.Rect(50, 520, 300, 50)
 
-
-
 # Posición inicial del robot
 posicion_robot = (0,0)
 
@@ -518,6 +522,8 @@ while jugando:
                         print(f"Ejecutando {algorithms[i]}")
                         resetear_estado()
                         instrucciones = ejecutar_algoritmo(algorithms[i])
+                        resultados = ejecutar_simulaciones_algoritmo(algorithms[i])
+                        # print(f"Resultados para {algorithms[i]}: {resultados}")
                         mostrar_menu = False
                         mostrar_home = True
             elif mostrar_home and home_button.collidepoint(mouse_pos):
@@ -538,4 +544,3 @@ while jugando:
 
 pygame.quit()
 sys.exit()
-
