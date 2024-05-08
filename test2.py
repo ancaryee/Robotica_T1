@@ -2,6 +2,7 @@ import pygame
 import sys
 import time
 import random
+import matplotlib.pyplot as plt
 
 # Definir colores
 BLANCO, NEGRO, GRIS, ROJO, AZUL = (255, 255, 255), (0, 0, 0), (128, 128, 128), (255, 0, 0), (0, 0, 255)
@@ -91,10 +92,10 @@ def mover_robot():
 
     i, j = posicion_robot
     desplazamientos_direccion = {
-        'norte': ((i-1, j), 0.20, [('este', (i, j+1), 0.40), ('oeste', (i, j-1), 0.40)]),
-        'sur':   ((i+1, j), 0.20, [('este', (i, j+1), 0.40), ('oeste', (i, j-1), 0.40)]),
-        'este':  ((i, j+1), 0.20, [('norte', (i-1, j), 0.40), ('sur', (i+1, j), 0.40)]),
-        'oeste': ((i, j-1), 0.20, [('norte', (i-1, j), 0.40), ('sur', (i+1, j), 0.40)])
+        'norte': ((i-1, j), 0.40, [('este', (i, j+1), 0.30), ('oeste', (i, j-1), 0.30)]),
+        'sur':   ((i+1, j), 0.40, [('este', (i, j+1), 0.30), ('oeste', (i, j-1), 0.30)]),
+        'este':  ((i, j+1), 0.40, [('norte', (i-1, j), 0.30), ('sur', (i+1, j), 0.30)]),
+        'oeste': ((i, j-1), 0.40, [('norte', (i-1, j), 0.30), ('sur', (i+1, j), 0.30)])
     }
 
     # Obtener la dirección desde la política
@@ -194,44 +195,72 @@ aT = [P1, P2, P3, P4]
 aE.append(a1)
 aP.append(a0)
 
-while nK < 1000:
-    aE.append(a0)
-    aP.append(a2)
-    for s in range(0, nS):
-        for a in range(0, nA):
-            aAux = [aT[a][s][i] * aE[nK - 1][i] for i in range(0, nS)]
-            aQ[s][a] = nRw(s, a) + Ld * sum(aAux)
-        aX = aQ[s][:]
-        aE[nK][s] = max(aX)
-        aP[nK][s] = aX.index(max(aX))   
-    nK += 1
+# Lista para almacenar el número de pasos en cada iteración
+pasos_totales_por_iteracion = []
+repeticiones = 5  # Puedes ajustar este número según sea necesario
 
-print("Esta es la política final óptima:")
-print(aP[-1])
+# Bucle para repetir el proceso varias veces
+for iteracion in range(repeticiones):
+    # Resetear variables necesarias para el siguiente cálculo y juego
+    pasos_totales = 0
+    posicion_robot = seleccionar_posicion_inicial_aleatoria(ejemplo_mapa)
+    meta_alcanzada = False
 
-instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Markov
-# time.sleep(2)
-# Configurar la pantalla
-pantalla = pygame.display.set_mode((ANCHO, ALTO))
-pygame.display.set_caption("Mapa")
+    # Algoritmo para calcular la política óptima y mover el robot
+    nK = 0
+    while nK < 1000:
+        aE.append(a0)
+        aP.append(a2)
+        for s in range(0, nS):
+            for a in range(0, nA):
+                aAux = [aT[a][s][i] * aE[nK - 1][i] for i in range(0, nS)]
+                aQ[s][a] = nRw(s, a) + Ld * sum(aAux)
+            aX = aQ[s][:]
+            aE[nK][s] = max(aX)
+            aP[nK][s] = aX.index(max(aX))   
+        nK += 1
+    
+    print("Esta es la política final óptima:")
+    print(aP[-1])
+    instrucciones = aP[-1]
 
-# Posición inicial del robot
-posicion_robot = (0,0)
+    # Configurar la pantalla de Pygame
+    pantalla = pygame.display.set_mode((ANCHO, ALTO))
+    pygame.display.set_caption("Mapa")
 
-# Bucle principal del juego
-reloj = pygame.time.Clock()
-jugando = True
-while jugando:
-    for evento in pygame.event.get():
-        if evento.type == pygame.QUIT:
-            jugando = False  # Salir del bucle si se cierra la ventana
-        elif evento.type == pygame.KEYDOWN:
-            if evento.key == pygame.K_ESCAPE:
-                jugando = False  # Salir del bucle si se presiona la tecla Escape
+    # Posición inicial del robot
+    posicion_robot = (0, 0)
 
-    # Mover el robot según la política óptima para su estado actual
-    mover_robot()
+    # Bucle principal del juego
+    reloj = pygame.time.Clock()
+    jugando = True
+    while jugando and not meta_alcanzada:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                jugando = False  # Salir del bucle si se cierra la ventana
+
+        # Mover el robot según la política óptima para su estado actual
+        mover_robot()
+
+        # Verificar si el robot ha alcanzado la meta
+        if meta_alcanzada:
+            break  # Salir del bucle si la meta ha sido alcanzada
+
+        pasos_totales += 1
+
+    # Almacenar el número total de pasos necesarios para llegar a la meta en esta iteración
+    pasos_totales_por_iteracion.append(pasos_totales)
+
+# Graficar los pasos por iteración como un gráfico de dispersión
+plt.scatter(range(1, repeticiones + 1), pasos_totales_por_iteracion)
+plt.xlabel('Iteración')
+plt.ylabel('Pasos hasta la meta')
+plt.title('Pasos necesarios para llegar a la meta en cada iteración')
+plt.grid(True)
+plt.show()
 
 # Salir de Pygame
 pygame.quit()
+
+# Salir del bucle de repeticiones y terminar el programa
 sys.exit()
