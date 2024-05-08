@@ -123,7 +123,6 @@ def mover_robot():
         if posicion_robot == (5, 3):  # Coordenadas de la meta
             ejemplo_mapa[5][3] = 'R'
             meta_alcanzada = True
-            graficar_nRw_final()
             graficar_nRw_acumulado()
             print("¡Meta alcanzada!")
 
