@@ -3,8 +3,8 @@ import sys
 import time
 import random
 import matplotlib.pyplot as plt
+import numpy as np
 
-aasa
 # Definir coloress
 BLANCO, NEGRO, GRIS, ROJO, AZUL, VERDE = (255, 255, 255), (0, 0, 0), (128, 128, 128), (255, 0, 0), (0, 0, 255), (0, 255, 0)
 NORTE, SUR, ESTE, OESTE = 0, 1, 2, 3
@@ -124,6 +124,7 @@ def mover_robot():
             ejemplo_mapa[5][3] = 'R'
             meta_alcanzada = True
             graficar_nRw_final()
+            graficar_nRw_acumulado()
             print("¡Meta alcanzada!")
 
         pantalla.fill(BLANCO)
