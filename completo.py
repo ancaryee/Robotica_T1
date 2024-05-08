@@ -2,7 +2,7 @@ import pygame
 import sys
 import time
 import random
-
+import matplotlib.pyplot as plt
 # Definir coloress
 BLANCO, NEGRO, GRIS, ROJO, AZUL, VERDE = (255, 255, 255), (0, 0, 0), (128, 128, 128), (255, 0, 0), (0, 0, 255), (0, 255, 0)
 NORTE, SUR, ESTE, OESTE = 0, 1, 2, 3
@@ -135,8 +135,8 @@ def mover_robot():
         pygame.display.flip()
         pygame.time.wait(500)
 
-    # # Imprimir estadísticas de movimiento
-    # print(f"Total de pasos: {pasos_totales}, Errores: {errores}")
+    # Imprimir estadísticas de movimiento
+    print(f"Total de pasos: {pasos_totales}, Errores: {errores}")
 
 
 def seleccionar_posicion_inicial_aleatoria(mapa):
@@ -215,6 +215,8 @@ aT = [P1, P2, P3, P4]
 aE.append(a1)
 aP.append(a0)
 
+instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Markov
+
 mostrar_menu = True
 ###################################################
 #ALGORITMOS
@@ -225,26 +227,42 @@ def ejecutar_algoritmo(seleccion):
     if seleccion == "Value Iteration Clásico":
         Ld = 0.9
         nK = 1
-        aE = [a1]  # Suponiendo que a1 está definido previamente
-        aP = [a0]  # Suponiendo que a0 está definido previamente
+        aE = [a1]  # a1 debe ser una lista definida previamente
+        aP = [a0]  # a0 debe ser una lista definida previamente
         aQ = [[0] * nA for _ in range(nS)]  # nS y nA deben estar definidos
-        # Suponiendo que aT está definido previamente y contiene matrices de transición
+        exito_y_errores = []  # Lista para almacenar los resultados de alcanzar la meta
+        
         while nK < 1000:
             aE.append(a0.copy())  # Se añade una copia para evitar referencias duplicadas
             aP.append(a2.copy())  # Se añade una copia por la misma razón
             for s in range(nS):
                 for a in range(nA):
-                    aAux = [aT[a][s][i] * aE[nK - 1][i] for i in range(nS)]
-                    aQ[s][a] = nRw(s, a) + Ld * sum(aAux)
+                    recompensa_actual = nRw(s, a)
+                    aQ[s][a] = recompensa_actual + Ld * sum([aT[a][s][i] * aE[nK - 1][i] for i in range(nS)])
+                    if s == nMETA:  # Suponiendo que nMETA es el estado de la meta
+                        exito_y_errores.append(recompensa_actual)  # Registrar el evento de éxito o error
                 aX = aQ[s][:]
                 aE[nK][s] = max(aX)
                 aP[nK][s] = aX.index(max(aX))
-            nK += 1          
-        instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Markov
+            nK += 1
+            
+        instrucciones = aP[-1]
         print("Instrucciones finales:", instrucciones)
+
+        # Graficar los resultados de éxito o error
+        plt.figure(figsize=(10, 5))
+        plt.plot(exito_y_errores, label='Recompensa al alcanzar la meta')
+        plt.xlabel('Número de Eventos')
+        plt.ylabel('Recompensa')
+        plt.title('Recompensa al Alcanzar la Meta en Value Iteration Clásico')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
         return instrucciones
     
     elif seleccion == "Relative Value Iteration":
+        
         Ld = 0.9
         V = [0] * nS  # Vector de valores inicializado a 0
         policy = [0] * nS  # Política inicial arbitraria
