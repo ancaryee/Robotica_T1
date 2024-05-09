@@ -133,7 +133,7 @@ def mover_robot(visualizar=True):
             pantalla.fill(BLANCO)
             dibujar_mapa(ejemplo_mapa, pantalla)
             pygame.display.flip()
-            pygame.time.wait(500)
+            pygame.time.wait(300)
         
         if meta_alcanzada and visualizar:
             graficar_nRw_acumulado()
@@ -289,9 +289,8 @@ def ejecutar_algoritmo(seleccion):
 
             iteracion += 1  # Incrementar el contador de iteraciones
 
-        print("Política óptima calculada usando Relative Value Iteration:", policy)
         aP.append(policy)
-        print("Política óptima calculada usando Relative Value Iteration:", policy)
+
         instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Markov
         print("Instrucciones finales:", instrucciones)
         return instrucciones
@@ -319,9 +318,7 @@ def ejecutar_algoritmo(seleccion):
 
             iteracion += 1  # Incrementar el contador de iteraciones
 
-        print("Política óptima calculada usando Gauss-Seidel Value Iteration:", policy)
         aP.append(policy)
-        print("Política óptima calculada usando Gauss-Seidel Value Iteration:", policy)
         instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Markov
         print("Instrucciones finales:", instrucciones)
         return instrucciones
@@ -348,9 +345,7 @@ def ejecutar_algoritmo(seleccion):
 
             iteracion += 1  # Incrementar el contador de iteraciones
 
-        print("Política óptima calculada usando Value Iteration con Descuento 0.98:", policy)
         aP.append(policy)
-        print("Política óptima calculada usando Value Iteration con Descuento 0.98:", policy)
         instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Markov
         print("Instrucciones finales:", instrucciones)
         return instrucciones
@@ -381,9 +376,7 @@ def ejecutar_algoritmo(seleccion):
 
             iteracion += 1  # Incrementar el contador de iteraciones
 
-        print("Relative Value Iteration con Descuento 0.98:", policy)
         aP.append(policy)
-        print("Política óptima calculada usando Relative Value Iteration con Descuento 0.98:", policy)
         instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Markov
         print("Instrucciones finales:", instrucciones)
         return instrucciones
@@ -409,7 +402,6 @@ def ejecutar_algoritmo(seleccion):
         # Extraer la política óptima de la tabla Q
         policy = [max(range(nA), key=lambda a: Q[s][a]) for s in range(nS)]
         aP.append(policy)
-        print("Política óptima calculada usando Q-Value Iteration Clásico:", policy)
         instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Markov
         print("Instrucciones finales:", instrucciones)
         return instrucciones
@@ -436,12 +428,11 @@ def ejecutar_algoritmo(seleccion):
         # Extraer la política óptima de la tabla Q
         policy = [max(range(nA), key=lambda a: Q[s][a]) for s in range(nS)]
         aP.append(policy)
-        print("Política óptima calculada usando Q-Value Iteration con Descuento 0.98:", policy)
         instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Markov
         print("Instrucciones finales:", instrucciones)
         return instrucciones
-
-def ejecutar_simulaciones_algoritmo(algoritmo, num_simulaciones=20):
+num_simulaciones=20
+def ejecutar_simulaciones_algoritmo(algoritmo, num_simulaciones):
     resultados_pasos = []
     # Primera iteración con visualización
     resetear_estado()
@@ -469,9 +460,6 @@ def ejecutar_simulaciones_algoritmo(algoritmo, num_simulaciones=20):
     plt.xticks(range(1, num_simulaciones + 1))
     plt.grid(True)
     plt.show()
-
-    return resultados_pasos
-
 
     return resultados_pasos
 
@@ -585,7 +573,7 @@ while jugando:
                 elif simulation_button.collidepoint(mouse_pos) and algoritmo_seleccionado is not None:
                     # Ejecuta las simulaciones para el algoritmo seleccionado
                     print(f"Ejecutando simulaciones para {algoritmo_seleccionado}")
-                    resultados = ejecutar_simulaciones_algoritmo(algoritmo_seleccionado, 10)
+                    resultados = ejecutar_simulaciones_algoritmo(algoritmo_seleccionado, num_simulaciones)
                     print(f"Resultados de simulación para {algoritmo_seleccionado}: {resultados}")
                     mostrar_menu = True  # Decide si quieres volver al menú o hacer algo más
 
