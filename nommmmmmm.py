@@ -7,7 +7,8 @@ import numpy as np
 # Definir coloress
 BLANCO, NEGRO, GRIS, ROJO, AZUL, VERDE = (255, 255, 255), (0, 0, 0), (128, 128, 128), (255, 0, 0), (0, 0, 255), (0, 255, 0)
 NORTE, SUR, ESTE, OESTE = 0, 1, 2, 3
-
+tiempo = 300
+num_simulaciones=20
 # Funciones del modelo de Markov
 def mapear_a_estados(mapa):
     estados = []
@@ -128,12 +129,12 @@ def mover_robot(visualizar=True):
             ejemplo_mapa[5][3] = 'R'
             meta_alcanzada = True
 
-        
+ 
         if visualizar:           
             pantalla.fill(BLANCO)
             dibujar_mapa(ejemplo_mapa, pantalla)
             pygame.display.flip()
-            pygame.time.wait(10)
+            pygame.time.wait(tiempo)
         
         if meta_alcanzada and visualizar:
             graficar_nRw_acumulado()
@@ -431,7 +432,7 @@ def ejecutar_algoritmo(seleccion):
         instrucciones = aP[-1]  # Asignar las instrucciones obtenidas del modelo de Markov
         print("Instrucciones finales:", instrucciones)
         return instrucciones
-num_simulaciones=20
+
 def ejecutar_simulaciones_algoritmo(algoritmo, num_simulaciones):
     resultados_pasos = []
     # Primera iteración con visualización
