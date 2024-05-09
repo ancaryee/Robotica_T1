@@ -133,7 +133,7 @@ def mover_robot(visualizar=True):
             pantalla.fill(BLANCO)
             dibujar_mapa(ejemplo_mapa, pantalla)
             pygame.display.flip()
-            pygame.time.wait(300)
+            pygame.time.wait(10)
         
         if meta_alcanzada and visualizar:
             graficar_nRw_acumulado()
